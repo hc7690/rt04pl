@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  role          String    @default("user") // admin | user
+  name          String
+  nik           String?   @unique
+  placeOfBirth  String?
+  dateOfBirth   DateTime?
+  gender        String?
+  address       String?
+  rtRw          String?
+  kelurahan     String?
+  kecamatan     String?
+  city          String?
+  province      String?
+  postalCode    String?
+  religion      String?
+  maritalStatus String?
+  occupation    String?
+  nationality   String?   @default("WNI")
+  phone         String?
+  ktpPhoto      String?
+  status        String    @default("active") // active | disabled
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  articles      Article[]
+  transactions  Transaction[]
+}
+
+model Article {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  excerpt    String?
+  content    String
+  coverImage String?
+  category   String   @default("Pengumuman")
+  status     String   @default("published") // published | draft
+  views      Int      @default(0)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model FinanceCategory {
+  id           String        @id @default(cuid())
+  name         String
+  type         String // pemasukan | pengeluaran
+  sort         Int           @default(0)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  type        String // pemasukan | pengeluaran
+  categoryId  String
+  category    FinanceCategory @relation(fields: [categoryId], references: [id])
+  amount      Int
+  description String?
+  date        DateTime
+  proofImage  String?
+  createdById String
+  createdBy   User            @relation(fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model OrgMember {
+  id       String  @id @default(cuid())
+  group    String  @default("Pengurus Inti")
+  position String
+  name     String
+  photo    String?
+  phone    String?
+  sort     Int     @default(0)
+  active   Boolean @default(true)
+}

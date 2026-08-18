@@ -1,101 +1,170 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getProfile } from "@/lib/utils";
+import ArticleCard from "@/components/ArticleCard";
+import {
+  IconArrowRight,
+  IconBuilding,
+  IconDocument,
+  IconHeart,
+  IconMegaphone,
+  IconShield,
+  IconUsers,
+  IconWallet,
+} from "@/components/icons";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [profile, session, articles, wargaCount, articleCount] = await Promise.all([
+    getProfile(),
+    getServerSession(authOptions),
+    prisma.article.findMany({
+      where: { status: "published" },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+    prisma.user.count({ where: { role: "user", status: "active" } }),
+    prisma.article.count({ where: { status: "published" } }),
+  ]);
+
+  const stats = [
+    { icon: <IconUsers className="w-5 h-5" />, label: "Warga Terdaftar", value: wargaCount },
+    { icon: <IconDocument className="w-5 h-5" />, label: "Artikel & Pengumuman", value: articleCount },
+    { icon: <IconWallet className="w-5 h-5" />, label: "Transparansi Kas", value: "100%" },
+  ];
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <>
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="max-w-2xl">
+            <span className="badge bg-white/15 text-white mb-4">Selamat datang di</span>
+            <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight">{profile.namaRT}</h1>
+            <p className="mt-4 text-emerald-50/90 leading-relaxed">
+              {profile.deskripsi}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/artikel" className="btn bg-white text-emerald-700 hover:bg-emerald-50">
+                <IconMegaphone className="w-4 h-4" />
+                Baca Artikel &amp; Pengumuman
+              </Link>
+              <Link
+                href="/profil/struktur"
+                className="btn border border-white/40 text-white hover:bg-white/10"
+              >
+                <IconBuilding className="w-4 h-4" />
+                Struktur Organisasi
+              </Link>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* Stats */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 -mt-8 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {stats.map((s, i) => (
+            <div key={i} className="card flex items-center gap-4 p-5 shadow-md">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                {s.icon}
+              </span>
+              <div>
+                <p className="text-2xl font-extrabold text-slate-900">{s.value}</p>
+                <p className="text-sm text-slate-500">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Latest articles */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Artikel Terbaru</h2>
+            <p className="text-sm text-slate-500 mt-1">Informasi dan pengumuman terbaru dari pengurus RT</p>
+          </div>
+          <Link href="/artikel" className="btn btn-secondary btn-sm shrink-0">
+            Semua Artikel
+            <IconArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        {articles.length === 0 ? (
+          <p className="card p-8 text-center text-slate-500">Belum ada artikel.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {articles.map((a) => (
+              <ArticleCard key={a.id} article={a} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Visi Misi + finance CTA */}
+      <section className="bg-white border-y border-slate-200">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Visi &amp; Misi</h2>
+              <div className="space-y-4">
+                <div className="card p-5 border-l-4 border-l-emerald-500">
+                  <h3 className="flex items-center gap-2 font-bold text-slate-900">
+                    <IconShield className="w-5 h-5 text-emerald-600" />
+                    Visi
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">{profile.visi}</p>
+                </div>
+                <div className="card p-5 border-l-4 border-l-teal-500">
+                  <h3 className="flex items-center gap-2 font-bold text-slate-900">
+                    <IconHeart className="w-5 h-5 text-teal-600" />
+                    Misi
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                    {profile.misi}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Keuangan RT yang Transparan</h2>
+              <div className="card p-6 sm:p-8 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                    <IconWallet className="w-6 h-6" />
+                  </span>
+                  <h3 className="font-bold text-slate-900">Laporan Kas &amp; Keuangan</h3>
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Setiap pemasukan dan pengeluaran kas RT dicatat lengkap beserta bukti transaksi.
+                  Warga terdaftar dapat melihat laporan bulanan dan mencetaknya dalam bentuk PDF.
+                </p>
+                <div className="mt-6">
+                  {session?.user ? (
+                    <Link href="/laporan-keuangan" className="btn btn-primary">
+                      <IconWallet className="w-4 h-4" />
+                      Lihat Laporan Keuangan
+                    </Link>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      <Link href="/daftar" className="btn btn-primary">
+                        Daftar sebagai Warga
+                      </Link>
+                      <Link href="/login" className="btn btn-secondary">
+                        Masuk
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
