@@ -1,16 +1,8 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-const EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
 export async function POST(req: Request) {
   try {
@@ -31,13 +23,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ukuran file maksimal 5MB" }, { status: 400 });
     }
 
-    const ext = EXT[file.type];
-    const filename = `\( {randomUUID()}. \){ext}`;
-    const pathname = kind === "ktp" ? `ktp/\( {filename}` : `uploads/ \){filename}`;
+    const pathname = kind === "ktp" ? `ktp/\( {file.name}` : `uploads/ \){file.name}`;
 
     const blob = await put(pathname, file, {
       access: "public",
-      addRandomSuffix: false,
+      addRandomSuffix: true,
     });
 
     return NextResponse.json({ url: blob.url });
