@@ -180,7 +180,7 @@ export default async function AdminWargaPage({
                         {u.hasKTPSukajaya === "ya" ? "Ya" : "Belum"}
                       </span>
                     </td>
-                   <td className="table-td">
+                    <td className="table-td">
   <span className={`badge ${
     u.houseOwnership === "tetap"
       ? "bg-emerald-100 text-emerald-700"
@@ -188,9 +188,9 @@ export default async function AdminWargaPage({
       ? "bg-amber-100 text-amber-700"
       : "bg-slate-100 text-slate-500"
   }`}>
-    {u.houseOwnership === "tetap" ? "Tetap" : u.houseOwnership === "sewa" ? "Sewa" : "—"}
+    {u.houseOwnership === "tetap" ? "Tetap" : u.houseOwnership === "sewa" ? "Sewa" : "-"}
   </span>
-</td>
+</td> 
                     <td className="table-td">
                       <span
                         className={`badge ${
