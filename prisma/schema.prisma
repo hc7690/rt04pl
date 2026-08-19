@@ -4,37 +4,56 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("TURSO_DATABASE_URL") 
+  url      = env("DATABASE_URL") 
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  role          String    @default("user") // admin | user
-  name          String
-  nik           String?   @unique
-  placeOfBirth  String?
-  dateOfBirth   DateTime?
-  gender        String?
-  address       String?
-  rtRw          String?
-  kelurahan     String?
-  kecamatan     String?
-  city          String?
-  province      String?
-  postalCode    String?
-  religion      String?
-  maritalStatus String?
-  occupation    String?
-  nationality   String?   @default("WNI")
-  phone         String?
-  ktpPhoto      String?
-  status        String    @default("active") // active | disabled
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  articles      Article[]
-  transactions  Transaction[]
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  role             String    @default("user") // admin | user
+  name             String
+  nik              String?   @unique
+  placeOfBirth     String?
+  dateOfBirth      DateTime?
+  gender           String?
+  address          String?
+  rtRw             String?
+  kelurahan        String?
+  kecamatan        String?
+  city             String?
+  province         String?
+  postalCode       String?
+  religion         String?
+  maritalStatus    String?
+  occupation       String?
+  nationality      String?   @default("WNI")
+  phone            String?
+  ktpPhoto         String?
+  status           String    @default("active") // active | disabled
+  // === Field baru untuk data KK ===
+  isHeadOfFamily   Boolean   @default(false) // apakah ini kepala keluarga
+  domicileBlock    String?   // Blok domisili (misal: "F-10")
+  domicileNumber   String?   // No. rumah manual
+  hasKTPSukajaya   String?   // "ya" | "belum"
+  kkPhoto          String?   // Foto Kartu Keluarga
+  profileVisibility String   @default("public") // public | private
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  articles         Article[]
+  transactions     Transaction[]
+  familyMembers    FamilyMember[]
+}
+
+model FamilyMember {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  status    String   // suami | istri | anak | orang tua | lainnya
+  religion  String?  // agama anggota (untuk statistik kurban)
+  isDeceased Boolean @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Article {

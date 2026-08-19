@@ -5,13 +5,17 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import UserActions from "@/components/UserActions";
+import AdminEditUserForm from "@/components/AdminEditUserForm";
 import { IconArrowLeft, IconEye } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminWargaDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  const user = await prisma.user.findUnique({ where: { id: params.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: params.id },
+    include: { familyMembers: { orderBy: { createdAt: "asc" } } },
+  });
   if (!user) notFound();
 
   const rows: Array<[string, string]> = [
@@ -24,6 +28,8 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
     ],
     ["Jenis Kelamin", user.gender || "—"],
     ["Alamat", user.address || "—"],
+    ["Blok Domisili", user.domicileBlock || "—"],
+    ["No. Rumah", user.domicileNumber || "—"],
     ["RT / RW", user.rtRw || "—"],
     ["Kelurahan", user.kelurahan || "—"],
     ["Kecamatan", user.kecamatan || "—"],
@@ -36,6 +42,8 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
     ["Kewarganegaraan", user.nationality || "—"],
     ["No. HP / WA", user.phone || "—"],
     ["Email", user.email],
+    ["KTP Sukajaya", user.hasKTPSukajaya === "ya" ? "Ya" : "Belum"],
+    ["Profil", user.profileVisibility === "private" ? "Privat" : "Publik"],
     ["Terdaftar", formatDateTime(user.createdAt)],
     ["Terakhir diperbarui", formatDateTime(user.updatedAt)],
   ];
@@ -100,6 +108,46 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
               ))}
             </dl>
 
+            {/* Anggota KK */}
+            <h2 className="mt-8 font-bold text-slate-900">
+              Anggota Kartu Keluarga ({user.familyMembers.length} orang)
+            </h2>
+            {user.familyMembers.length > 0 ? (
+              <div className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {user.familyMembers.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        m.isDeceased
+                          ? "bg-slate-200 text-slate-500"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {m.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${
+                          m.isDeceased ? "text-slate-400 line-through" : "text-slate-800"
+                        }`}>
+                          {m.name}
+                        </p>
+                        <p className="text-xs text-slate-400">{m.status}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {m.religion && (
+                        <span className="badge bg-slate-100 text-slate-600 text-xs">{m.religion}</span>
+                      )}
+                      {m.isDeceased && (
+                        <span className="badge bg-red-100 text-red-600 text-xs">Meninggal</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-400">Belum ada anggota KK yang didaftarkan.</p>
+            )}
+
             <div className="mt-6 flex flex-wrap gap-2">
               <UserActions
                 id={user.id}
@@ -129,6 +177,35 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Form Edit oleh Admin */}
+      <div className="mt-6">
+        <AdminEditUserForm
+          user={{
+            id: user.id,
+            name: user.name,
+            phone: user.phone || "",
+            occupation: user.occupation || "",
+            gender: user.gender || "",
+            religion: user.religion || "",
+            maritalStatus: user.maritalStatus || "",
+            address: user.address || "",
+            domicileBlock: user.domicileBlock || "",
+            domicileNumber: user.domicileNumber || "",
+            hasKTPSukajaya: user.hasKTPSukajaya || "belum",
+            profileVisibility: user.profileVisibility || "public",
+            status: user.status,
+            role: user.role,
+          }}
+          familyMembers={user.familyMembers.map((m) => ({
+            id: m.id,
+            name: m.name,
+            status: m.status,
+            religion: m.religion || "",
+            isDeceased: m.isDeceased,
+          }))}
+        />
       </div>
     </div>
   );

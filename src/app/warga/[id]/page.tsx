@@ -10,6 +10,7 @@ import {
   IconLock,
   IconMapPin,
   IconShield,
+  IconUsers,
 } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,10 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const user = await prisma.user.findUnique({ where: { id: params.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: params.id },
+    include: { familyMembers: { orderBy: { createdAt: "asc" } } },
+  });
   if (!user) notFound();
 
   const isOwner = session.user.id === user.id;
@@ -28,15 +32,14 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
   // Warga nonaktif hanya bisa dilihat oleh admin atau pemilik akun
   if (user.status !== "active" && !fullAccess) notFound();
 
+  // Cek visibility — jika private, non-owner/admin hanya lihat data dasar
+  const isPrivate = user.profileVisibility === "private" && !fullAccess;
+
   const basicRows: Array<[string, string]> = [
     ["Jenis Kelamin", user.gender || "—"],
-    ["Alamat", user.address || "—"],
-    ["RT / RW", user.rtRw || "—"],
-    ["Kelurahan", user.kelurahan || "—"],
-    ["Kecamatan", user.kecamatan || "—"],
-    ["Kota / Kabupaten", user.city || "—"],
-    ["Provinsi", user.province || "—"],
-    ["Pekerjaan", user.occupation || "—"],
+    ["Alamat Domisili", user.address || "—"],
+    ["Blok", user.domicileBlock || "—"],
+    ["No. Rumah", user.domicileNumber || "—"],
   ];
 
   const privateRows: Array<[string, string]> = [
@@ -49,10 +52,17 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
     ],
     ["Agama", user.religion || "—"],
     ["Status Perkawinan", user.maritalStatus || "—"],
+    ["Pekerjaan", user.occupation || "—"],
     ["Kewarganegaraan", user.nationality || "—"],
     ["No. HP / WA", user.phone || "—"],
     ["Email", user.email],
+    ["RT / RW", user.rtRw || "—"],
+    ["Kelurahan", user.kelurahan || "—"],
+    ["Kecamatan", user.kecamatan || "—"],
+    ["Kota / Kabupaten", user.city || "—"],
+    ["Provinsi", user.province || "—"],
     ["Kode Pos", user.postalCode || "—"],
+    ["KTP Sukajaya", user.hasKTPSukajaya === "ya" ? "Ya" : "Belum"],
   ];
 
   return (
@@ -76,13 +86,15 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
               <h1 className="text-2xl font-extrabold truncate">{user.name}</h1>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-emerald-100">
                 <IconMapPin className="w-4 h-4 shrink-0" />
-                {user.rtRw ? `RT ${user.rtRw}` : "Warga"} · {user.kelurahan || user.city || "RT"}
+                {user.domicileBlock ? `Blok ${user.domicileBlock}` : user.rtRw ? `RT ${user.rtRw}` : "Warga"}
+                {user.domicileNumber ? ` No. ${user.domicileNumber}` : ""}
+                {user.kelurahan ? ` · ${user.kelurahan}` : ""}
               </p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="badge bg-white/20 text-white">
-              {user.role === "admin" ? "Admin RT" : "Warga"}
+              {user.role === "admin" ? "Admin RT" : "Kepala Keluarga"}
             </span>
             <span
               className={`badge ${
@@ -91,11 +103,17 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
             >
               {user.status === "active" ? "Aktif" : "Nonaktif"}
             </span>
+            {user.hasKTPSukajaya === "ya" && (
+              <span className="badge bg-blue-900/40 text-blue-100">KTP Sukajaya</span>
+            )}
             {isOwner && <span className="badge bg-white/20 text-white">Ini Anda</span>}
+            {isPrivate && (
+              <span className="badge bg-yellow-900/40 text-yellow-100">Profil Privat</span>
+            )}
           </div>
         </div>
 
-        {/* Data dasar */}
+        {/* Data dasar — selalu terlihat */}
         <div className="px-6 sm:px-8 py-6">
           <h2 className="font-bold text-slate-900">Data Dasar</h2>
           <dl className="mt-4 divide-y divide-slate-100">
@@ -106,6 +124,47 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
               </div>
             ))}
           </dl>
+
+          {/* Anggota KK — selalu terlihat */}
+          {user.familyMembers.length > 0 && (
+            <div className="mt-8">
+              <h2 className="font-bold text-slate-900 flex items-center gap-2">
+                <IconUsers className="w-5 h-5 text-emerald-600" />
+                Anggota Kartu Keluarga ({user.familyMembers.length} orang)
+              </h2>
+              <div className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {user.familyMembers.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        m.isDeceased
+                          ? "bg-slate-200 text-slate-500"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {m.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${
+                          m.isDeceased ? "text-slate-400 line-through" : "text-slate-800"
+                        }`}>
+                          {m.name}
+                        </p>
+                        <p className="text-xs text-slate-400">{m.status}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {m.religion && (
+                        <span className="badge bg-slate-100 text-slate-600 text-xs">{m.religion}</span>
+                      )}
+                      {m.isDeceased && (
+                        <span className="badge bg-red-100 text-red-600 text-xs">Meninggal</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Data sensitif — hanya admin & pemilik */}
           {fullAccess ? (
@@ -131,12 +190,24 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
                   />
                 </div>
               )}
+
+              {/* Tombol edit — untuk pemilik atau admin */}
+              {isOwner && (
+                <Link href="/dashboard" className="btn btn-primary mt-6">
+                  <IconShield className="w-4 h-4" />
+                  Edit Profil Saya
+                </Link>
+              )}
             </>
           ) : (
             <div className="mt-8 flex items-start gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
               <IconLock className="w-4 h-4 mt-0.5 shrink-0" />
-              Data sensitif seperti NIK, nomor HP, email, dan foto KTP hanya dapat dilihat
-              oleh admin dan pemilik akun.
+              {isPrivate ? (
+                <>Profil ini bersifat privat. Data sensitif hanya dapat dilihat oleh admin dan pemilik akun.</>
+              ) : (
+                <>Data sensitif seperti NIK, nomor HP, email, dan foto KTP hanya dapat dilihat
+                oleh admin dan pemilik akun.</>
+              )}
             </div>
           )}
         </div>

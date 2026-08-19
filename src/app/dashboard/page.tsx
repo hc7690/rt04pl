@@ -11,6 +11,7 @@ import {
   IconSettings,
   IconUsers,
   IconWallet,
+  IconPencil,
 } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,10 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
 
   const [user, articles, profile] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { familyMembers: { orderBy: { createdAt: "asc" } } },
+    }),
     prisma.article.findMany({
       where: { status: "published" },
       orderBy: { createdAt: "desc" },
@@ -49,13 +53,13 @@ export default async function DashboardPage() {
         : user.placeOfBirth || "—",
     ],
     ["Jenis Kelamin", user.gender || "—"],
-    ["Alamat", user.address || "—"],
-    ["RT / RW", user.rtRw || "—"],
-    ["Kelurahan / Kecamatan", [user.kelurahan, user.kecamatan].filter(Boolean).join(", ") || "—"],
-    ["Kota / Provinsi", [user.city, user.province].filter(Boolean).join(", ") || "—"],
+    ["Alamat Domisili", user.address || "—"],
+    ["Blok", user.domicileBlock || "—"],
+    ["No. Rumah", user.domicileNumber || "—"],
     ["Agama", user.religion || "—"],
     ["Status Perkawinan", user.maritalStatus || "—"],
     ["Pekerjaan", user.occupation || "—"],
+    ["KTP Sukajaya", user.hasKTPSukajaya === "ya" ? "Ya" : "Belum"],
     ["No. HP", user.phone || "—"],
     ["Email", user.email],
   ];
@@ -71,9 +75,16 @@ export default async function DashboardPage() {
             Selamat datang di dashboard warga {profile.namaRT}.
           </p>
         </div>
-        <span className="badge self-start bg-emerald-100 text-emerald-700 px-3 py-1.5">
-          {session.user.role === "admin" ? "Admin" : "Warga Terdaftar"}
-        </span>
+        <div className="flex items-center gap-2 self-start">
+          <span className="badge bg-emerald-100 text-emerald-700 px-3 py-1.5">
+            {session.user.role === "admin" ? "Admin" : "Kepala Keluarga"}
+          </span>
+          {user.profileVisibility === "private" && (
+            <span className="badge bg-amber-100 text-amber-700 px-3 py-1.5">
+              Profil Privat
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Quick links */}
@@ -94,7 +105,13 @@ export default async function DashboardPage() {
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
         {/* Data diri */}
         <div className="card p-6 sm:p-8">
-          <h2 className="font-bold text-slate-900">Data Diri (sesuai KTP)</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-slate-900">Data Diri (sesuai KTP)</h2>
+            <Link href={`/warga/${user.id}`} className="btn btn-secondary btn-sm">
+              <IconPencil className="w-3.5 h-3.5" />
+              Lihat
+            </Link>
+          </div>
           <dl className="mt-5 divide-y divide-slate-100">
             {infoRows.map(([label, value]) => (
               <div key={label} className="flex items-start justify-between gap-4 py-2.5">
@@ -105,22 +122,64 @@ export default async function DashboardPage() {
           </dl>
         </div>
 
-        {/* Artikel terbaru */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-slate-900">Artikel Terbaru</h2>
-            <Link href="/artikel" className="btn btn-secondary btn-sm">
-              Semua
-              <IconArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {articles.map((a) => (
-              <ArticleCard key={a.id} article={a} />
-            ))}
-            {articles.length === 0 && (
-              <p className="card p-6 text-sm text-slate-500">Belum ada artikel.</p>
+        {/* Anggota KK + Artikel */}
+        <div className="space-y-6">
+          {/* Anggota KK */}
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">
+                Anggota KK ({user.familyMembers.length} orang)
+              </h2>
+            </div>
+            {user.familyMembers.length > 0 ? (
+              <div className="space-y-2">
+                {user.familyMembers.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        m.isDeceased
+                          ? "bg-slate-200 text-slate-500"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {m.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${
+                          m.isDeceased ? "text-slate-400 line-through" : "text-slate-800"
+                        }`}>
+                          {m.name}
+                        </p>
+                        <p className="text-xs text-slate-400">{m.status}</p>
+                      </div>
+                    </div>
+                    {m.isDeceased && (
+                      <span className="badge bg-red-100 text-red-600 text-xs">Meninggal</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">Belum ada anggota KK yang didaftarkan.</p>
             )}
+          </div>
+
+          {/* Artikel terbaru */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-slate-900">Artikel Terbaru</h2>
+              <Link href="/artikel" className="btn btn-secondary btn-sm">
+                Semua
+                <IconArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {articles.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+              {articles.length === 0 && (
+                <p className="card p-6 text-sm text-slate-500">Belum ada artikel.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

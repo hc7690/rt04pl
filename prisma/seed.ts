@@ -20,7 +20,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const warga = await prisma.user.upsert({
     where: { email: "warga@example.com" },
     update: {},
     create: {
@@ -45,8 +45,25 @@ async function main() {
       nationality: "WNI",
       phone: "081234567890",
       status: "active",
+      // Field baru
+      isHeadOfFamily: true,
+      domicileBlock: "F-10",
+      domicileNumber: "10",
+      hasKTPSukajaya: "ya",
+      profileVisibility: "public",
     },
   });
+
+  // Tambah anggota KK untuk warga demo
+  const existingMembers = await prisma.familyMember.findMany({ where: { userId: warga.id } });
+  if (existingMembers.length === 0) {
+    await prisma.familyMember.createMany({
+      data: [
+        { userId: warga.id, name: "Siti Santoso", status: "istri", religion: "Islam" },
+        { userId: warga.id, name: "Rina Santoso", status: "anak", religion: "Islam" },
+      ],
+    });
+  }
 
   // Default profile settings
   const profile = {

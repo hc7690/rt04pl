@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDateShort } from "@/lib/utils";
 import UserActions from "@/components/UserActions";
-import { IconEye, IconSearch } from "@/components/icons";
+import { IconEye, IconSearch, IconUsers, IconHome, IconCheckCircle, IconAlert, IconHeart } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -23,43 +23,125 @@ export default async function AdminWargaPage({
             { name: { contains: q } },
             { email: { contains: q } },
             { nik: { contains: q } },
+            { domicileBlock: { contains: q } },
           ],
         }
       : {},
+    include: { familyMembers: true },
     orderBy: { createdAt: "desc" },
   });
+
+  // Hitung statistik
+  const totalKK = users.filter((u) => u.isHeadOfFamily).length;
+  const totalWarga = users.reduce((acc, u) => acc + 1 + u.familyMembers.length, 0);
+  const ktpSukajaya = users.filter((u) => u.hasKTPSukajaya === "ya").length;
+  const belumKTP = users.filter((u) => u.hasKTPSukajaya !== "ya").length;
+
+  // Hitung anggota KK yang meninggal
+  const totalMeninggal = users.reduce(
+    (acc, u) => acc + u.familyMembers.filter((m) => m.isDeceased).length,
+    0
+  );
+
+  // Hitung agama (berdasarkan kepala keluarga + anggota KK)
+  const allReligions: string[] = [];
+  users.forEach((u) => {
+    if (u.religion) allReligions.push(u.religion);
+    u.familyMembers.forEach((m) => {
+      if (m.religion) allReligions.push(m.religion);
+    });
+  });
+  const muslimCount = allReligions.filter((r) => r === "Islam").length;
+  const nonMuslimCount = allReligions.length - muslimCount;
+
+  const stats = [
+    {
+      icon: <IconHome className="w-5 h-5" />,
+      label: "Total KK",
+      value: totalKK,
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
+      icon: <IconUsers className="w-5 h-5" />,
+      label: "Total Warga",
+      value: totalWarga,
+      color: "bg-emerald-100 text-emerald-700",
+    },
+    {
+      icon: <IconCheckCircle className="w-5 h-5" />,
+      label: "KTP Sukajaya",
+      value: `${ktpSukajaya} / ${belumKTP}`,
+      sub: "ya / belum",
+      color: "bg-violet-100 text-violet-700",
+    },
+    {
+      icon: <IconHeart className="w-5 h-5" />,
+      label: "Meninggal",
+      value: totalMeninggal,
+      color: "bg-red-100 text-red-700",
+    },
+    {
+      icon: <IconUsers className="w-5 h-5" />,
+      label: "Muslim",
+      value: muslimCount,
+      color: "bg-teal-100 text-teal-700",
+    },
+    {
+      icon: <IconUsers className="w-5 h-5" />,
+      label: "Non-Muslim",
+      value: nonMuslimCount,
+      color: "bg-amber-100 text-amber-700",
+    },
+  ];
 
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-slate-900">Data Warga</h1>
       <p className="mt-1 text-slate-500 mb-4">
-        {users.length} akun terdaftar — klik nama warga untuk melihat profil lengkapnya.
+        {users.length} Kepala Keluarga terdaftar — {totalWarga} warga total.
       </p>
 
+      {/* Statistik */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {stats.map((s, i) => (
+          <div key={i} className="card p-4">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${s.color}`}>
+              {s.icon}
+            </div>
+            <p className="mt-2 text-xl font-extrabold text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500">{s.label}</p>
+            {s.sub && <p className="text-xs text-slate-400">{s.sub}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
       <form method="GET" className="relative max-w-md">
         <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Cari nama, email, atau NIK…"
+          placeholder="Cari nama, email, NIK, atau blok…"
           className="input pl-10"
         />
       </form>
 
+      {/* Tabel */}
       <div className="card mt-4 overflow-hidden">
         {users.length === 0 ? (
           <p className="p-10 text-center text-sm text-slate-400">Tidak ada warga yang ditemukan.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px]">
+            <table className="w-full min-w-[900px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="table-th">Nama</th>
-                  <th className="table-th">NIK</th>
+                  <th className="table-th">Blok</th>
+                  <th className="table-th">Anggota KK</th>
+                  <th className="table-th">KTP Sukajaya</th>
                   <th className="table-th">Peran</th>
                   <th className="table-th">Status</th>
-                  <th className="table-th">Terdaftar</th>
                   <th className="table-th text-right">Aksi</th>
                 </tr>
               </thead>
@@ -79,7 +161,25 @@ export default async function AdminWargaPage({
                         </div>
                       </Link>
                     </td>
-                    <td className="table-td font-mono text-xs">{u.nik || "—"}</td>
+                    <td className="table-td">
+                      <span className="badge bg-slate-100 text-slate-600">
+                        {u.domicileBlock || "—"}{u.domicileNumber ? ` No. ${u.domicileNumber}` : ""}
+                      </span>
+                    </td>
+                    <td className="table-td">
+                      <span className="badge bg-emerald-100 text-emerald-700">
+                        {u.familyMembers.length} orang
+                      </span>
+                    </td>
+                    <td className="table-td">
+                      <span className={`badge ${
+                        u.hasKTPSukajaya === "ya"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {u.hasKTPSukajaya === "ya" ? "Ya" : "Belum"}
+                      </span>
+                    </td>
                     <td className="table-td">
                       <span
                         className={`badge ${
@@ -102,7 +202,6 @@ export default async function AdminWargaPage({
                         {u.status === "active" ? "Aktif" : "Nonaktif"}
                       </span>
                     </td>
-                    <td className="table-td whitespace-nowrap">{formatDateShort(u.createdAt)}</td>
                     <td className="table-td">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
                         <Link

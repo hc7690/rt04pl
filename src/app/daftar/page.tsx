@@ -4,21 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { registerUser, type RegisterInput } from "@/actions/auth";
+import { registerUser, type RegisterInput, type FamilyMemberInput } from "@/actions/auth";
 import ImageUpload from "@/components/ImageUpload";
-import { IconAlert, IconCheck, IconInfo } from "@/components/icons";
+import { IconAlert, IconCheck, IconInfo, IconPlus, IconTrash } from "@/components/icons";
 
 const AGAMA = ["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu", "Lainnya"];
 const STATUS = ["Belum Kawin", "Kawin", "Cerai Hidup", "Cerai Mati"];
-const PROVINSI = [
-  "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi", "Sumatera Selatan", "Bengkulu",
-  "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau", "DKI Jakarta", "Jawa Barat",
-  "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten", "Bali", "Nusa Tenggara Barat",
-  "Nusa Tenggara Timur", "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan",
-  "Kalimantan Timur", "Kalimantan Utara", "Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan",
-  "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat", "Maluku", "Maluku Utara", "Papua",
-  "Papua Barat", "Papua Tengah", "Papua Pegunungan", "Papua Selatan", "Papua Barat Daya",
-];
+const STATUS_ANGGOTA = ["Suami", "Istri", "Anak", "Orang Tua", "Lainnya"];
+
+// Blok Puri Lestari: F-5 sampai F-20
+const BLOK_OPTIONS = Array.from({ length: 16 }, (_, i) => `F-${i + 5}`);
 
 const initial: RegisterInput = {
   email: "",
@@ -41,6 +36,13 @@ const initial: RegisterInput = {
   nationality: "WNI",
   phone: "",
   ktpPhoto: "",
+  // Field baru
+  isHeadOfFamily: false,
+  domicileBlock: "",
+  domicileNumber: "",
+  hasKTPSukajaya: "belum",
+  kkPhoto: "",
+  familyMembers: [],
 };
 
 export default function DaftarPage() {
@@ -55,13 +57,49 @@ export default function DaftarPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // Family member helpers
+  function addFamilyMember() {
+    set("familyMembers", [
+      ...(form.familyMembers || []),
+      { name: "", status: "Anak", religion: "" },
+    ]);
+  }
+
+  function updateFamilyMember(index: number, field: keyof FamilyMemberInput, value: string) {
+    const members = [...(form.familyMembers || [])];
+    members[index] = { ...members[index], [field]: value };
+    set("familyMembers", members);
+  }
+
+  function removeFamilyMember(index: number) {
+    const members = (form.familyMembers || []).filter((_, i) => i !== index);
+    set("familyMembers", members);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!form.isHeadOfFamily) {
+      setError("Anda harus memastikan bahwa Anda adalah Kepala Keluarga untuk mendaftar.");
+      return;
+    }
+
     if (form.password !== confirmPassword) {
       setError("Konfirmasi password tidak sesuai.");
       return;
     }
+
+    if (!form.domicileBlock) {
+      setError("Blok domisili wajib dipilih.");
+      return;
+    }
+
+    if (!form.domicileNumber?.trim()) {
+      setError("Nomor rumah wajib diisi.");
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await registerUser(form);
@@ -110,7 +148,7 @@ export default function DaftarPage() {
       <div className="text-center">
         <h1 className="text-3xl font-extrabold text-slate-900">Registrasi Warga</h1>
         <p className="mt-2 text-slate-500">
-          Isi data sesuai dengan KTP Anda. Data digunakan untuk keperluan administrasi kependudukan RT.
+          Hanya <strong>Kepala Keluarga</strong> yang diperbolehkan mendaftar. Isi data sesuai KTP Anda.
         </p>
       </div>
 
@@ -122,8 +160,28 @@ export default function DaftarPage() {
       )}
 
       <form onSubmit={handleSubmit} className="card mt-6 p-6 sm:p-8">
+
+        {/* === KONFIRMASI KEPALA KELUARGA === */}
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isHeadOfFamily}
+              onChange={(e) => set("isHeadOfFamily", e.target.checked)}
+              className="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+            />
+            <div>
+              <p className="font-bold text-amber-800">Pastikan Anda adalah Kepala Keluarga</p>
+              <p className="text-xs text-amber-600 mt-1">
+                Cukup 1 orang yang registrasi dalam 1 KK yaitu Kepala Keluarga.
+                Data anggota KK akan ditambahkan di bawah.
+              </p>
+            </div>
+          </label>
+        </div>
+
         {/* Data KTP */}
-        <h2 className="text-lg font-bold text-slate-900">Data KTP</h2>
+        <h2 className="mt-8 text-lg font-bold text-slate-900">Data KTP</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="nik">NIK <span className="text-red-500">*</span></label>
@@ -233,7 +291,82 @@ export default function DaftarPage() {
           </div>
         </div>
 
-        {/* Alamat */}
+        {/* === ALAMAT DOMISILI === */}
+        <h2 className="mt-8 text-lg font-bold text-slate-900">Alamat Domisili</h2>
+        <p className="text-xs text-slate-500 mt-1">
+          Alamat tempat tinggal Anda di Puri Lestari. Digunakan untuk pencarian data warga.
+        </p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-3">
+          <div>
+            <label className="label" htmlFor="domicileBlock">Blok <span className="text-red-500">*</span></label>
+            <select
+              id="domicileBlock"
+              className="input"
+              required
+              value={form.domicileBlock}
+              onChange={(e) => set("domicileBlock", e.target.value)}
+            >
+              <option value="">— Pilih Blok —</option>
+              {BLOK_OPTIONS.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label" htmlFor="domicileNumber">No. Rumah <span className="text-red-500">*</span></label>
+            <input
+              id="domicileNumber"
+              className="input"
+              required
+              placeholder="Contoh: 10"
+              value={form.domicileNumber}
+              onChange={(e) => set("domicileNumber", e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-1">
+            <label className="label">Alamat Lengkap</label>
+            <p className="input bg-slate-50 text-sm text-slate-600">
+              {form.domicileBlock && form.domicileNumber
+                ? `Puri Lestari Blok ${form.domicileBlock} No. ${form.domicileNumber}`
+                : "—"}
+            </p>
+          </div>
+        </div>
+
+        {/* === KTP SUKAJAYA === */}
+        <h2 className="mt-8 text-lg font-bold text-slate-900">Data KTP Sukajaya</h2>
+        <p className="text-xs text-slate-500 mt-1">
+          Untuk memudahkan sensus penduduk dan pendataan warga.
+        </p>
+        <div className="mt-5">
+          <label className="label">Sudah mempunyai KTP Sukajaya? <span className="text-red-500">*</span></label>
+          <div className="flex gap-4 mt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasKTPSukajaya"
+                value="ya"
+                checked={form.hasKTPSukajaya === "ya"}
+                onChange={(e) => set("hasKTPSukajaya", e.target.value)}
+                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-sm text-slate-700">Ya, sudah punya</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="hasKTPSukajaya"
+                value="belum"
+                checked={form.hasKTPSukajaya === "belum"}
+                onChange={(e) => set("hasKTPSukajaya", e.target.value)}
+                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-sm text-slate-700">Belum</span>
+            </label>
+          </div>
+        </div>
+
+        {/* === ALAMAT KTP (opsional, bisa diisi manual) === */}
         <h2 className="mt-8 text-lg font-bold text-slate-900">Alamat Sesuai KTP</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -292,7 +425,15 @@ export default function DaftarPage() {
               onChange={(e) => set("province", e.target.value)}
             >
               <option value="">— Pilih —</option>
-              {PROVINSI.map((p) => (
+              {[
+                "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi", "Sumatera Selatan", "Bengkulu",
+                "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau", "DKI Jakarta", "Jawa Barat",
+                "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten", "Bali", "Nusa Tenggara Barat",
+                "Nusa Tenggara Timur", "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan",
+                "Kalimantan Timur", "Kalimantan Utara", "Sulawesi Utara", "Sulawesi Tengah", "Sulawesi Selatan",
+                "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat", "Maluku", "Maluku Utara", "Papua",
+                "Papua Barat", "Papua Tengah", "Papua Pegunungan", "Papua Selatan", "Papua Barat Daya",
+              ].map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
@@ -308,6 +449,81 @@ export default function DaftarPage() {
               onChange={(e) => set("postalCode", e.target.value.replace(/\D/g, ""))}
             />
           </div>
+        </div>
+
+        {/* === ANGGOTA KK === */}
+        <h2 className="mt-8 text-lg font-bold text-slate-900">Anggota Kartu Keluarga</h2>
+        <p className="text-xs text-slate-500 mt-1">
+          Tambahkan seluruh anggota KK (termasuk Anda sebagai Kepala Keluarga).
+        </p>
+        <div className="mt-5 space-y-3">
+          {(form.familyMembers || []).map((member, idx) => (
+            <div key={idx} className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 p-4 bg-slate-50">
+              <div className="flex-1 min-w-[200px]">
+                <label className="label text-xs">Nama Anggota</label>
+                <input
+                  className="input"
+                  placeholder="Nama lengkap"
+                  value={member.name}
+                  onChange={(e) => updateFamilyMember(idx, "name", e.target.value)}
+                />
+              </div>
+              <div className="w-full sm:w-40">
+                <label className="label text-xs">Status</label>
+                <select
+                  className="input"
+                  value={member.status}
+                  onChange={(e) => updateFamilyMember(idx, "status", e.target.value)}
+                >
+                  {STATUS_ANGGOTA.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-full sm:w-36">
+                <label className="label text-xs">Agama</label>
+                <select
+                  className="input"
+                  value={member.religion || ""}
+                  onChange={(e) => updateFamilyMember(idx, "religion", e.target.value)}
+                >
+                  <option value="">— Pilih —</option>
+                  {AGAMA.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeFamilyMember(idx)}
+                className="btn btn-secondary btn-sm !text-red-600 !border-red-200 hover:!bg-red-50"
+                title="Hapus anggota"
+              >
+                <IconTrash className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addFamilyMember}
+            className="btn btn-secondary w-full"
+          >
+            <IconPlus className="w-4 h-4" />
+            Tambah Anggota KK
+          </button>
+        </div>
+
+        {/* === UPLOAD KK === */}
+        <h2 className="mt-8 text-lg font-bold text-slate-900">Upload Kartu Keluarga</h2>
+        <p className="text-xs text-slate-500 mt-1">Opsional — untuk verifikasi data.</p>
+        <div className="mt-5">
+          <ImageUpload
+            label="Foto Kartu Keluarga (opsional)"
+            aspect="cover"
+            kind="ktp"
+            value={form.kkPhoto || ""}
+            onChange={(url) => set("kkPhoto", url)}
+          />
         </div>
 
         {/* Kontak & Akun */}
@@ -375,7 +591,7 @@ export default function DaftarPage() {
         <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-xs text-emerald-800">
           <IconInfo className="w-4 h-4 mt-0.5 shrink-0" />
           Data yang Anda isikan hanya digunakan untuk keperluan administrasi warga RT dan tidak akan
-          disalahgunakan.
+          disalahgunakan. Hanya Kepala Keluarga yang mendaftar — satu akun per KK.
         </div>
 
         <button type="submit" disabled={loading} className="btn btn-primary mt-6 w-full">
