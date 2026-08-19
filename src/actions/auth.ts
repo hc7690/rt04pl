@@ -36,6 +36,7 @@ export type RegisterInput = {
   domicileBlock: string;
   domicileNumber: string;
   hasKTPSukajaya: string;
+  houseOwnership?: string;
   kkPhoto?: string;
   familyMembers?: FamilyMemberInput[];
 };

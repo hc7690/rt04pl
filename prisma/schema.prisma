@@ -36,6 +36,7 @@ model User {
   domicileBlock    String?   // Blok domisili (misal: "F-10")
   domicileNumber   String?   // No. rumah manual
   hasKTPSukajaya   String?   // "ya" | "belum"
+  houseOwnership   String?   // "tetap" | "sewa"
   kkPhoto          String?   // Foto Kartu Keluarga
   profileVisibility String   @default("public") // public | private
   createdAt        DateTime  @default(now())

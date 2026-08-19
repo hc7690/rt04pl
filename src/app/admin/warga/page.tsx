@@ -139,6 +139,7 @@ export default async function AdminWargaPage({
                   <th className="table-th">Blok</th>
                   <th className="table-th">Anggota KK</th>
                   <th className="table-th">KTP Sukajaya</th>
+                  <th className="table-th">Kepemilikan</th> 
                   <th className="table-th">Peran</th>
                   <th className="table-th">Status</th>
                   <th className="table-th text-right">Aksi</th>
@@ -179,6 +180,17 @@ export default async function AdminWargaPage({
                         {u.hasKTPSukajaya === "ya" ? "Ya" : "Belum"}
                       </span>
                     </td>
+                   <td className="table-td">
+  <span className={`badge ${
+    u.houseOwnership === "tetap"
+      ? "bg-emerald-100 text-emerald-700"
+      : u.houseOwnership === "sewa"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-slate-100 text-slate-500"
+  }`}>
+    {u.houseOwnership === "tetap" ? "Tetap" : u.houseOwnership === "sewa" ? "Sewa" : "—"}
+  </span>
+</td>
                     <td className="table-td">
                       <span
                         className={`badge ${

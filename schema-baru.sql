@@ -27,6 +27,7 @@ CREATE TABLE "User" (
     "domicileBlock" TEXT,
     "domicileNumber" TEXT,
     "hasKTPSukajaya" TEXT,
+    "houseOwnership" TEXT,
     "kkPhoto" TEXT,
     "profileVisibility" TEXT NOT NULL DEFAULT 'public',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

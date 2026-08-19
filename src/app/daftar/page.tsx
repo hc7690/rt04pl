@@ -41,6 +41,7 @@ const initial: RegisterInput = {
   domicileBlock: "",
   domicileNumber: "",
   hasKTPSukajaya: "belum",
+  houseOwnership: "tetap",
   kkPhoto: "",
   familyMembers: [],
 };
@@ -332,6 +333,34 @@ export default function DaftarPage() {
             </p>
           </div>
         </div>
+
+        <div>
+  <label className="label">Status Kepemilikan Rumah <span className="text-red-500">*</span></label>
+  <div className="flex gap-4 mt-2">
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        name="houseOwnership"
+        value="tetap"
+        checked={form.houseOwnership === "tetap"}
+        onChange={(e) => set("houseOwnership", e.target.value)}
+        className="h-4 w-4 text-emerald-600 focus:ring-emerald-500"
+      />
+      <span className="text-sm text-slate-700">Milik Sendiri (Tetap)</span>
+    </label>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        name="houseOwnership"
+        value="sewa"
+        checked={form.houseOwnership === "sewa"}
+        onChange={(e) => set("houseOwnership", e.target.value)}
+        className="h-4 w-4 text-emerald-600 focus:ring-emerald-500"
+      />
+      <span className="text-sm text-slate-700">Sewa</span>
+    </label>
+  </div>
+</div>
 
         {/* === KTP SUKAJAYA === */}
         <h2 className="mt-8 text-lg font-bold text-slate-900">Data KTP Sukajaya</h2>
