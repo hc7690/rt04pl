@@ -95,16 +95,18 @@ export async function adminUpdateProfile(userId: string, input: {
 
   const updateData: Prisma.UserUpdateInput  = {}; 
   const fields = [
-    "name", "phone", "occupation", "gender", "religion", "maritalStatus",
-    "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
-    "profileVisibility", "status", "role",
-  ];
+  "name", "phone", "occupation", "gender", "religion", "maritalStatus",
+  "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
+  "profileVisibility", "status", "role",
+] as const;
 
-  for (const field of fields) {
-    if (input[field] !== undefined) {
-      updateData[field] = input[field];
-    }
+for (const field of fields) {
+  const value = input[field];
+
+  if (value !== undefined) {
+    Object.assign(updateData, { [field]: value });
   }
+}
 
   // Bangun alamat domisili jika ada perubahan
   if (input.domicileBlock !== undefined || input.domicileNumber !== undefined) {
