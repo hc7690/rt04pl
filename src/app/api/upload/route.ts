@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ukuran file maksimal 5MB" }, { status: 400 });
     }
 
-    const pathname = kind === "ktp" ? `ktp/\( {file.name}` : `uploads/ \){file.name}`;
+    const pathname = kind === "ktp" ? `ktp/${file.name}` : `uploads/${file.name}`;
 
     const blob = await put(pathname, file, {
       access: "public",
