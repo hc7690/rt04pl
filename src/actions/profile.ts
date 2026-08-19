@@ -42,7 +42,7 @@ export async function updateProfile(input: {
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
- p   });
+    });
     fire(syncUser(updated));
   }
 
