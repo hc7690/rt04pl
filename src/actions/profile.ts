@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fire, syncUser } from "@/lib/sync";
 
@@ -31,7 +32,7 @@ export async function updateProfile(input: {
   if (!user) return { ok: false, error: "Akun tidak ditemukan" };
 
   // Update data user
-  const updateData: Record<string, string | null | undefined> = {}; 
+  const updateData: Prisma.UserUpdateInput = {}; 
   if (input.name !== undefined) updateData.name = input.name.trim();
   if (input.phone !== undefined) updateData.phone = input.phone.trim();
   if (input.occupation !== undefined) updateData.occupation = input.occupation.trim();
@@ -92,7 +93,7 @@ export async function adminUpdateProfile(userId: string, input: {
     return { ok: false, error: "Tidak diizinkan" };
   }
 
-  const updateData: Record<string, string | null | undefined> = {}; 
+  const updateData: Prisma.UserUpdateInput  = {}; 
   const fields = [
     "name", "phone", "occupation", "gender", "religion", "maritalStatus",
     "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
