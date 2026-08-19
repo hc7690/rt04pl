@@ -135,6 +135,7 @@ export async function registerUser(input: RegisterInput): Promise<ActionResult> 
       domicileBlock: input.domicileBlock,
       domicileNumber: input.domicileNumber.trim(),
       hasKTPSukajaya: input.hasKTPSukajaya || "belum",
+      houseOwnership: input.houseOwnership || null,
       kkPhoto: input.kkPhoto || null,
       profileVisibility: "public",
     },
