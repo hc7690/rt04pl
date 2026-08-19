@@ -31,7 +31,7 @@ export async function updateProfile(input: {
   if (!user) return { ok: false, error: "Akun tidak ditemukan" };
 
   // Update data user
-  const updateData: Record<string, any> = {};
+  const updateData: Record<string, string | null | undefined> = {}; 
   if (input.name !== undefined) updateData.name = input.name.trim();
   if (input.phone !== undefined) updateData.phone = input.phone.trim();
   if (input.occupation !== undefined) updateData.occupation = input.occupation.trim();
@@ -92,7 +92,7 @@ export async function adminUpdateProfile(userId: string, input: {
     return { ok: false, error: "Tidak diizinkan" };
   }
 
-  const updateData: Record<string, any> = {};
+  const updateData: Record<string, string | null | undefined> = {}; 
   const fields: Array<keyof typeof input> = [
     "name", "phone", "occupation", "gender", "religion", "maritalStatus",
     "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { adminUpdateProfile, type FamilyMemberInput } from "@/actions/profile";
+import { useRouter } from "next/navigation"; 
 import { IconAlert, IconCheck, IconPlus, IconTrash, IconPencil } from "./icons";
 
 type UserData = {
@@ -57,12 +56,12 @@ export default function AdminEditUserForm({
     setMembers((prev) => [...prev, { name: "", status: "Anak", religion: "", isDeceased: false }]);
   }
 
-  function updateMember(index: number, field: keyof MemberData, value: any) {
-    setMembers((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
+  function updateMember(index: number, field: keyof MemberData, value: string | boolean) {
+  setMembers((prev) => {
+    const updated = [...prev];
+    updated[index] = { ...updated[index], [field]: value };
+    return updated;
+  });
   }
 
   function removeMember(index: number) {
