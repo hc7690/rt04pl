@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation"; 
+import { adminUpdateProfile } from "@/actions/profile";
 import { IconAlert, IconCheck, IconPlus, IconTrash, IconPencil } from "./icons";
 
 type UserData = {
