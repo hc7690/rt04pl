@@ -41,7 +41,7 @@ export async function updateProfile(input: {
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
-    });
+ p   });
     fire(syncUser(updated));
   }
 
@@ -93,7 +93,7 @@ export async function adminUpdateProfile(userId: string, input: {
   }
 
   const updateData: Record<string, string | null | undefined> = {}; 
-  const fields: Array<keyof typeof input> = [
+  const fields = [
     "name", "phone", "occupation", "gender", "religion", "maritalStatus",
     "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
     "profileVisibility", "status", "role",
