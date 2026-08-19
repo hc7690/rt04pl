@@ -36,6 +36,14 @@ export default async function AdminWargaPage({
   const ktpSukajaya = users.filter((u) => u.hasKTPSukajaya === "ya").length;
   const belumKTP = users.filter((u) => u.hasKTPSukajaya !== "ya").length;
 
+  const rumahTetap = users.filter(
+    (u) => u.houseOwnership === "tetap"
+  ).length;
+
+  const rumahSewa = users.filter(
+    (u) => u.houseOwnership === "sewa"
+  ).length;
+
   // Hitung anggota KK yang meninggal
   const totalMeninggal = users.reduce(
     (acc, u) => acc + u.familyMembers.filter((m) => m.isDeceased).length,
@@ -72,6 +80,18 @@ export default async function AdminWargaPage({
       value: `${ktpSukajaya} / ${belumKTP}`,
       sub: "ya / belum",
       color: "bg-violet-100 text-violet-700",
+    },
+    {
+      icon: <IconHome className="w-5 h-5" />,
+      label: "Rumah Tetap",
+      value: rumahTetap,
+      color: "bg-amber-100 text-amber-700",
+    },
+    {
+      icon: <IconHome className="w-5 h-5" />,
+      label: "Rumah Sewa",
+      value: rumahSewa,
+      color: "bg-orange-100 text-orange-700",
     },
     {
       icon: <IconHeart className="w-5 h-5" />,
