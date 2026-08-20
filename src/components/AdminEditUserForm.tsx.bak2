@@ -13,7 +13,6 @@ type UserData = {
   gender: string;
   religion: string;
   maritalStatus: string;
-  houseOwnership: string;
   address: string;
   domicileBlock: string;
   domicileNumber: string;
@@ -194,23 +193,7 @@ export default function AdminEditUserForm({
           </div>
         </div>
 
-        {/* Status Kepemilikan Rumah */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <label className="label text-xs">Status Kepemilikan Rumah</label>
-          <select
-            className="input"
-            value={form.houseOwnership || ""}
-            onChange={(e) => set("houseOwnership", e.target.value)}
-          >
-            <option value="">-- Pilih --</option>
-            <option value="tetap">Tetap</option>
-            <option value="sewa">Sewa</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Domisili */}
+        {/* Domisili */}
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label className="label text-xs">Blok Domisili</label>

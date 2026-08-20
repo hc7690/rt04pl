@@ -79,7 +79,6 @@ export async function adminUpdateProfile(userId: string, input: {
   gender?: string;
   religion?: string;
   maritalStatus?: string;
-  houseOwnership?: string;
   address?: string;
   domicileBlock?: string;
   domicileNumber?: string;
@@ -96,7 +95,7 @@ export async function adminUpdateProfile(userId: string, input: {
 
   const updateData: Prisma.UserUpdateInput  = {}; 
   const fields = [
-  "name", "phone", "occupation", "gender", "religion", "maritalStatus", "houseOwnership",
+  "name", "phone", "occupation", "gender", "religion", "maritalStatus",
   "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
   "profileVisibility", "status", "role",
 ] as const;

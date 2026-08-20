@@ -190,6 +190,7 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
             gender: user.gender || "",
             religion: user.religion || "",
             maritalStatus: user.maritalStatus || "",
+        houseOwnership: user.houseOwnership || "",
             address: user.address || "",
             domicileBlock: user.domicileBlock || "",
             domicileNumber: user.domicileNumber || "",
