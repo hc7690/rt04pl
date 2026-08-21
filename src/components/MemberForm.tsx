@@ -35,6 +35,8 @@ export default function MemberForm({
 }: Props) {
   const router = useRouter();
   const [group, setGroup] = useState(initial?.group ?? "Pengurus Inti");
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroup, setNewGroup] = useState("");
   const [position, setPosition] = useState(initial?.position ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [photo, setPhoto] = useState(initial?.photo ?? "");
@@ -88,18 +90,46 @@ export default function MemberForm({
         <div>
           <label className="label">Kelompok / Seksi <span className="text-red-500">*</span></label>
           <select
-            className="input"
-            required
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-          >
-            <option value="">Pilih kelompok / seksi</option>
-            {groups.map((g) => (
-              <option key={g} value={g}>
-                {g}
+              className="input"
+              required={!addingGroup}
+              value={addingGroup ? "__new__" : group}
+              onChange={(e) => {
+                if (e.target.value === "__new__") {
+                  setAddingGroup(true);
+                  setNewGroup("");
+                  setGroup("");
+                } else {
+                  setAddingGroup(false);
+                  setGroup(e.target.value);
+                }
+              }}
+            >
+              <option value="">Pilih kelompok / seksi</option>
+
+              {groups.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+
+              <option value="__new__">
+                ＋ Tambahkan seksi baru...
               </option>
-            ))}
-          </select>
+            </select>
+
+            {addingGroup && (
+              <input
+                className="input mt-2"
+                required
+                autoFocus
+                placeholder="Contoh: Seksi Sosial"
+                value={newGroup}
+                onChange={(e) => {
+                  setNewGroup(e.target.value);
+                  setGroup(e.target.value);
+                }}
+              />
+            )}
         </div>
         <div>
           <label className="label">Jabatan <span className="text-red-500">*</span></label>
