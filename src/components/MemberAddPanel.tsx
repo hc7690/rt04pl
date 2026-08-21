@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import MemberForm from "./MemberForm";
 import { IconPlus, IconX } from "./icons";
 
-export default function MemberAddPanel({ groups }: { groups: string[] }) {
+export default function MemberAddPanel({
+  groups,
+  users,
+}: {
+  groups: string[];
+  users: { id: string; name: string }[];
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -29,7 +35,7 @@ export default function MemberAddPanel({ groups }: { groups: string[] }) {
               Tutup
             </button>
           </div>
-          <MemberForm groups={groups} onSuccess={handleSuccess} />
+          <MemberForm groups={groups} users={users} onSuccess={handleSuccess} />
         </div>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className="btn btn-primary w-full">

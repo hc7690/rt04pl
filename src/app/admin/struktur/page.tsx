@@ -8,9 +8,25 @@ import { IconPencil, IconPhone } from "@/components/icons";
 export const dynamic = "force-dynamic";
 
 export default async function AdminStrukturPage() {
-  const members = await prisma.orgMember.findMany({
-    orderBy: [{ group: "asc" }, { sort: "asc" }],
-  });
+  const [members, users] = await Promise.all([
+    prisma.orgMember.findMany({
+      orderBy: [{ group: "asc" }, { sort: "asc" }],
+    }),
+    prisma.user.findMany({
+      where: {
+        status: "active",
+        role: "user",
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    }),
+  ]);
+
   const groups = Array.from(new Set(members.map((m) => m.group)));
 
   const grouped = members.reduce<Record<string, typeof members>>((acc, m) => {
@@ -25,7 +41,7 @@ export default async function AdminStrukturPage() {
         Kelola susunan pengurus RT yang tampil di halaman publik.
       </p>
 
-      <MemberAddPanel groups={groups} />
+      <MemberAddPanel groups={groups} users={users} />
 
       <div className="mt-5 space-y-6">
         {Object.keys(grouped).length === 0 && (

@@ -30,6 +30,8 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
     ["Alamat", user.address || "—"],
     ["Blok Domisili", user.domicileBlock || "—"],
     ["No. Rumah", user.domicileNumber || "—"],
+    ["Status Kepemilikan Rumah", user.houseOwnership || "-"],
+    ["Alamat Sesuai KTP", user.ktpAddress || "-"],
     ["RT / RW", user.rtRw || "—"],
     ["Kelurahan", user.kelurahan || "—"],
     ["Kecamatan", user.kecamatan || "—"],
@@ -184,6 +186,7 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
         <AdminEditUserForm
           user={{
             id: user.id,
+          email: user.email || "",
             name: user.name,
             phone: user.phone || "",
             occupation: user.occupation || "",
@@ -192,6 +195,7 @@ export default async function AdminWargaDetailPage({ params }: { params: { id: s
             maritalStatus: user.maritalStatus || "",
         houseOwnership: user.houseOwnership || "",
             address: user.address || "",
+        ktpAddress: user.ktpAddress || "",
             domicileBlock: user.domicileBlock || "",
             domicileNumber: user.domicileNumber || "",
             hasKTPSukajaya: user.hasKTPSukajaya || "belum",

@@ -5,9 +5,22 @@ import MemberForm from "@/components/MemberForm";
 export const dynamic = "force-dynamic";
 
 export default async function EditMemberPage({ params }: { params: { id: string } }) {
-  const [member, allMembers] = await Promise.all([
+  const [member, allMembers, users] = await Promise.all([
     prisma.orgMember.findUnique({ where: { id: params.id } }),
     prisma.orgMember.findMany({ select: { group: true }, distinct: ["group"] }),
+    prisma.user.findMany({
+      where: {
+        status: "active",
+        role: "user",
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    }),
   ]);
   if (!member) notFound();
 
@@ -20,6 +33,7 @@ export default async function EditMemberPage({ params }: { params: { id: string 
       <div className="card p-6 sm:p-8 max-w-2xl">
         <MemberForm
           groups={groups}
+      users={users}
           initial={{
             id: member.id,
             group: member.group,

@@ -18,6 +18,7 @@ model User {
   dateOfBirth      DateTime?
   gender           String?
   address          String?
+  ktpAddress       String? // Alamat sesuai KTP
   rtRw             String?
   kelurahan        String?
   kecamatan        String?

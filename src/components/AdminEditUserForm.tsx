@@ -7,6 +7,8 @@ import { IconAlert, IconCheck, IconPlus, IconTrash, IconPencil } from "./icons";
 
 type UserData = {
   id: string;
+  email?: string;
+  password?: string;
   name: string;
   phone: string;
   occupation: string;
@@ -15,6 +17,7 @@ type UserData = {
   maritalStatus: string;
   houseOwnership: string;
   address: string;
+  ktpAddress: string;
   domicileBlock: string;
   domicileNumber: string;
   hasKTPSukajaya: string;
@@ -44,7 +47,12 @@ export default function AdminEditUserForm({
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [form, setForm] = useState(user);
+  const [form, setForm] = useState({
+  ...user,
+  email: user.email ?? "",
+    ktpAddress: user.ktpAddress ?? "",
+  password: "",
+});
   const [members, setMembers] = useState<MemberData[]>(familyMembers);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -79,13 +87,17 @@ export default function AdminEditUserForm({
     try {
       const validMembers = members.filter((m) => m.name.trim());
       const result = await adminUpdateProfile(user.id, {
-        name: form.name,
+        email: form.email,
+      password: form.password,
+      name: form.name,
         phone: form.phone,
         occupation: form.occupation,
         gender: form.gender,
         religion: form.religion,
         maritalStatus: form.maritalStatus,
+        houseOwnership: form.houseOwnership,
         address: form.address,
+        ktpAddress: form.ktpAddress,
         domicileBlock: form.domicileBlock,
         domicileNumber: form.domicileNumber,
         hasKTPSukajaya: form.hasKTPSukajaya,
@@ -151,7 +163,40 @@ export default function AdminEditUserForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Data Dasar */}
+        {/* Data Login */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <h3 className="font-bold text-blue-900 mb-3">Data Login</h3>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="label text-xs">Email Login</label>
+                <input
+                  type="email"
+                  className="input"
+                  value={form.email || ""}
+                  onChange={(e) => set("email", e.target.value)}
+                  placeholder="email@contoh.com"
+                />
+              </div>
+
+              <div>
+                <label className="label text-xs">Password Baru</label>
+                <input
+                  type="password"
+                  className="input"
+                  value={form.password || ""}
+                  onChange={(e) => set("password", e.target.value)}
+                  placeholder="Kosongkan jika tidak diubah"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-blue-700 mt-2">
+              Password dikosongkan = password lama tetap.
+            </p>
+          </div>
+
+          {/* Data Dasar */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label text-xs">Nama</label>
@@ -208,6 +253,12 @@ export default function AdminEditUserForm({
             <option value="sewa">Sewa</option>
           </select>
         </div>
+      </div>
+
+      {/* Alamat Sesuai KTP */}
+      <div>
+        <label className="label text-xs">Alamat Sesuai KTP</label>
+        <input className="input" value={form.ktpAddress || ""} onChange={(e) => set("ktpAddress", e.target.value)} placeholder="Alamat sesuai KTP" />
       </div>
 
       {/* Domisili */}

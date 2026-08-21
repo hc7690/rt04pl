@@ -1,4 +1,5 @@
 "use server";
+import bcrypt from "bcryptjs";
 
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
@@ -19,39 +20,124 @@ export type FamilyMemberInput = {
 
 // Update profil warga (oleh pemilik akun)
 export async function updateProfile(input: {
+  email?: string;
   name?: string;
-  phone?: string;
+  nik?: string;
+  placeOfBirth?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  rtRw?: string;
+  kelurahan?: string;
+  kecamatan?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  religion?: string;
+  maritalStatus?: string;
   occupation?: string;
+  nationality?: string;
+  phone?: string;
+  ktpPhoto?: string;
+  domicileBlock?: string;
+  domicileNumber?: string;
+  hasKTPSukajaya?: string;
+  houseOwnership?: string;
+  kkPhoto?: string;
   profileVisibility?: string;
   familyMembers?: FamilyMemberInput[];
 }): Promise<ActionResult> {
   const session = await getServerSession(authOptions);
   if (!session) return { ok: false, error: "Tidak diizinkan" };
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+  });
+
   if (!user) return { ok: false, error: "Akun tidak ditemukan" };
 
-  // Update data user
-  const updateData: Prisma.UserUpdateInput = {}; 
+  // Cek NIK/email agar tidak bentrok dengan warga lain
+  if (input.email !== undefined || input.nik !== undefined) {
+    const [existingEmail, existingNik] = await Promise.all([
+      input.email?.trim()
+        ? prisma.user.findFirst({
+            where: {
+              email: input.email.trim(),
+              NOT: { id: session.user.id },
+            },
+          })
+        : null,
+      input.nik?.trim()
+        ? prisma.user.findFirst({
+            where: {
+              nik: input.nik.trim(),
+              NOT: { id: session.user.id },
+            },
+          })
+        : null,
+    ]);
+
+    if (existingEmail) {
+      return { ok: false, error: "Email sudah digunakan akun lain" };
+    }
+
+    if (existingNik) {
+      return { ok: false, error: "NIK sudah digunakan warga lain" };
+    }
+  }
+
+  const updateData: Prisma.UserUpdateInput = {};
+
+  if (input.email !== undefined) updateData.email = input.email.trim();
   if (input.name !== undefined) updateData.name = input.name.trim();
-  if (input.phone !== undefined) updateData.phone = input.phone.trim();
+  if (input.nik !== undefined) updateData.nik = input.nik.trim();
+  if (input.placeOfBirth !== undefined) updateData.placeOfBirth = input.placeOfBirth.trim();
+
+  if (input.dateOfBirth !== undefined) {
+    updateData.dateOfBirth = input.dateOfBirth.trim()
+      ? new Date(input.dateOfBirth)
+      : null;
+  }
+
+  if (input.gender !== undefined) updateData.gender = input.gender;
+  if (input.address !== undefined) updateData.address = input.address.trim();
+  if (input.rtRw !== undefined) updateData.rtRw = input.rtRw.trim();
+  if (input.kelurahan !== undefined) updateData.kelurahan = input.kelurahan.trim();
+  if (input.kecamatan !== undefined) updateData.kecamatan = input.kecamatan.trim();
+  if (input.city !== undefined) updateData.city = input.city.trim();
+  if (input.province !== undefined) updateData.province = input.province.trim();
+  if (input.postalCode !== undefined) updateData.postalCode = input.postalCode.trim();
+  if (input.religion !== undefined) updateData.religion = input.religion;
+  if (input.maritalStatus !== undefined) updateData.maritalStatus = input.maritalStatus;
   if (input.occupation !== undefined) updateData.occupation = input.occupation.trim();
-  if (input.profileVisibility !== undefined) updateData.profileVisibility = input.profileVisibility;
+  if (input.nationality !== undefined) updateData.nationality = input.nationality.trim();
+  if (input.phone !== undefined) updateData.phone = input.phone.trim();
+
+  if (input.ktpPhoto !== undefined) updateData.ktpPhoto = input.ktpPhoto || null;
+  if (input.domicileBlock !== undefined) updateData.domicileBlock = input.domicileBlock;
+  if (input.domicileNumber !== undefined) updateData.domicileNumber = input.domicileNumber.trim();
+  if (input.hasKTPSukajaya !== undefined) updateData.hasKTPSukajaya = input.hasKTPSukajaya;
+  if (input.houseOwnership !== undefined) updateData.houseOwnership = input.houseOwnership || null;
+  if (input.kkPhoto !== undefined) updateData.kkPhoto = input.kkPhoto || null;
+  if (input.profileVisibility !== undefined) {
+    updateData.profileVisibility = input.profileVisibility;
+  }
 
   if (Object.keys(updateData).length > 0) {
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
     });
+
     fire(syncUser(updated));
   }
 
   // Update anggota KK
   if (input.familyMembers !== undefined) {
-    // Hapus semua anggota lama
-    await prisma.familyMember.deleteMany({ where: { userId: session.user.id } });
-    
-    // Tambah anggota baru
+    await prisma.familyMember.deleteMany({
+      where: { userId: session.user.id },
+    });
+
     if (input.familyMembers.length > 0) {
       await prisma.familyMember.createMany({
         data: input.familyMembers.map((m) => ({
@@ -68,6 +154,7 @@ export async function updateProfile(input: {
   revalidatePath("/profil");
   revalidatePath("/warga");
   revalidatePath("/dashboard");
+
   return { ok: true };
 }
 
@@ -79,6 +166,7 @@ export async function adminUpdateProfile(userId: string, input: {
   gender?: string;
   religion?: string;
   maritalStatus?: string;
+  houseOwnership?: string;
   address?: string;
   domicileBlock?: string;
   domicileNumber?: string;
@@ -95,7 +183,7 @@ export async function adminUpdateProfile(userId: string, input: {
 
   const updateData: Prisma.UserUpdateInput  = {}; 
   const fields = [
-  "name", "phone", "occupation", "gender", "religion", "maritalStatus",
+  "name", "phone", "occupation", "gender", "religion", "maritalStatus", "houseOwnership",
   "address", "domicileBlock", "domicileNumber", "hasKTPSukajaya",
   "profileVisibility", "status", "role",
 ] as const;

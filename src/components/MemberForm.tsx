@@ -8,6 +8,7 @@ import { IconAlert } from "./icons";
 
 type Props = {
   groups: string[];
+  users: { id: string; name: string }[];
   initial?: {
     id: string;
     group: string;
@@ -24,7 +25,14 @@ type Props = {
   onSuccess?: () => void;
 };
 
-export default function MemberForm({ groups, initial, submitLabel = "Simpan Anggota", redirectTo, onSuccess }: Props) {
+export default function MemberForm({
+  groups,
+  users,
+  initial,
+  submitLabel = "Simpan Anggota",
+  redirectTo,
+  onSuccess,
+}: Props) {
   const router = useRouter();
   const [group, setGroup] = useState(initial?.group ?? "Pengurus Inti");
   const [position, setPosition] = useState(initial?.position ?? "");
@@ -79,18 +87,19 @@ export default function MemberForm({ groups, initial, submitLabel = "Simpan Angg
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Kelompok / Seksi <span className="text-red-500">*</span></label>
-          <input
+          <select
             className="input"
-            list="group-list"
             required
             value={group}
             onChange={(e) => setGroup(e.target.value)}
-          />
-          <datalist id="group-list">
+          >
+            <option value="">Pilih kelompok / seksi</option>
             {groups.map((g) => (
-              <option key={g} value={g} />
+              <option key={g} value={g}>
+                {g}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
         <div>
           <label className="label">Jabatan <span className="text-red-500">*</span></label>
@@ -104,12 +113,19 @@ export default function MemberForm({ groups, initial, submitLabel = "Simpan Angg
         </div>
         <div>
           <label className="label">Nama Lengkap <span className="text-red-500">*</span></label>
-          <input
+          <select
             className="input"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-          />
+          >
+            <option value="">Pilih warga terdaftar</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.name}>
+                {user.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="label">No. HP (opsional)</label>

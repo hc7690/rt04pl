@@ -40,6 +40,7 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
     ["Alamat Domisili", user.address || "—"],
     ["Blok", user.domicileBlock || "—"],
     ["No. Rumah", user.domicileNumber || "—"],
+    ["Status Kepemilikan Rumah", user.houseOwnership || "-"],
   ];
 
   const privateRows: Array<[string, string]> = [
@@ -56,6 +57,7 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
     ["Kewarganegaraan", user.nationality || "—"],
     ["No. HP / WA", user.phone || "—"],
     ["Email", user.email],
+    ["Alamat Sesuai KTP", user.ktpAddress || "-"],
     ["RT / RW", user.rtRw || "—"],
     ["Kelurahan", user.kelurahan || "—"],
     ["Kecamatan", user.kecamatan || "—"],
@@ -88,7 +90,6 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
                 <IconMapPin className="w-4 h-4 shrink-0" />
                 {user.domicileBlock ? `Blok ${user.domicileBlock}` : user.rtRw ? `RT ${user.rtRw}` : "Warga"}
                 {user.domicileNumber ? ` No. ${user.domicileNumber}` : ""}
-                {user.kelurahan ? ` · ${user.kelurahan}` : ""}
               </p>
             </div>
           </div>
@@ -193,7 +194,7 @@ export default async function WargaProfilePage({ params }: { params: { id: strin
 
               {/* Tombol edit — untuk pemilik atau admin */}
               {isOwner && (
-                <Link href="/dashboard" className="btn btn-primary mt-6">
+                <Link href="/profil/edit" className="btn btn-primary mt-6">
                   <IconShield className="w-4 h-4" />
                   Edit Profil Saya
                 </Link>
